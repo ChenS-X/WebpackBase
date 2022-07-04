@@ -6,4 +6,5 @@
 
 // 使用import引入base.css
 import './style/css/base.css';
+import './style/css/index.scss';
 

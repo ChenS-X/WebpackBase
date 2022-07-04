@@ -8,13 +8,27 @@ module.exports = {
         path: resolve('dist'), // 将文件打包到/dist文件路径下
         filename: 'bundle.js' // 打包成功后的js文件名称为 bundle.js
     },
+    devServer: {
+        hot: true,
+    },
     module: {
         rules: [
             {
-                test: /\.css$/,
+                test: /\.(sa|sc|c)ss$/,
                 use: [
                     'style-loader',
-                    'css-loader'
+                    'css-loader',
+                    {
+                        loader: 'postcss-loader',
+                        options: {
+                            postcssOptions: {
+                                plugins: [
+                                    'postcss-preset-env'
+                                ],
+                            },
+                        },
+                    },
+                    'sass-loader'
                 ]
             }
         ]
