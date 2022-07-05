@@ -25,7 +25,9 @@ module.exports = {
     entry: './src/index.js', // 指定入口文件
     output: {
         path: resolve('dist'), // 将文件打包到/dist文件路径下
-        filename: 'bundle.[hash].js' // 打包成功后的js文件名称为 bundle.js
+        filename: 'bundle.[hash].js', // 打包成功后的js文件名称为 bundle.js
+        // 静态文件打包后的路径及文件名（默认是走全局的assetModuleFilename，如果有独立设置就按照独立设置的来）
+        assetModuleFilename: 'static/assets/[name].[hash][ext]'
     },
     // 配置压缩
     optimization: {
@@ -97,6 +99,43 @@ module.exports = {
                 test: /\.tsx?$/,
                 use: 'ts-loader',
                 exclude: /node_modules/
+            },
+            // {
+            //     // webpack4需要安装url-loader和file-loader
+
+            //     // 处理图片文件的规则安装指令：cnpm i url-loader file-loader  -D
+            //     test: /\.(png|jpe?g|gif|gif|svg)(\?.*)?$/,
+            //     loader: "url-loader",
+            //     options: {
+            //         limit: 80 * 1024, // 当图片小于80kb时采用base64的方式打包，大于则以图片形式打包。
+            //         name: "[hash:10].[ext]", // 每次webpack构建打包会生成一串不重复的hash码，[hash:10]则是去hash的前十位，[ext]取源文件的后缀名。
+            //         outputPath: "static/img", // 输出目录，output定义了输出目录为build，此处图片输出目录为build/static/img/XXX文件。
+            //         esModule: false, // 默认使用es6语法解析，html-loader使用的是commonjs语法引入，但2020年09月24日不用关闭url-loader的es6解析方法。
+            //     },
+            // },
+            {
+                // webpack内置url-loader和file-loader
+                test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,
+                type: 'asset',
+                // 配置url转data（base64）
+                parser: {
+                    dataUrlCondition: {
+                        // 相当于webpack4时url-loader的limit
+                        maxSize: 10 * 1024 // 设置小于10kb的图片资源转为base64
+                    }
+                },
+                // 单独配置打包后输出的路径和文件名称
+                generator: {
+                    filename: 'static/assets/images/[name].[hash][ext]'
+                }
+            },
+            {
+                test: /\.(mp4|webm|ogg|mp3|wav|flac|aac|woff2?|eot|ttf|otf)(\?.*)?$/,
+                type: 'asset/resource',
+                generator: {
+                    // 此处针对字体文件配置，当然了MP4等音视频文件其实最好分开写，这里只是做演示
+                    filename: 'static/assets/fonts/[name].[hash:10][ext]'
+                }
             }
         ]
     },
@@ -111,17 +150,18 @@ module.exports = {
         // 正常访问到资源。但是这样在开发时会有一个问题，就是我希望我在index.html中写路径时可以提示，且不用担心是否和输出路径一致。那么我们
         // 可以在public文件夹下以和输出路径一样的文件结构，比如我现在的输出路径静态资源时static/assets下的，那么我在public文件夹下也依照
         // static/assets的文件结构存放静态资源，这样就可以开发时写路径有提示，并且不用担心打包后加载不到资源的问题了。
+
+        // 修改下面的Copywebpackplugin配置，同时修改public的文件结构：
         new CopyWebpackPlugin({
-            patterns: [
-                {
-                    from: resolve('public'),
-                    to: resolve('dist/static'), // 这是资源copy到输出目录的路径
-                    toType: 'dir', // 将from下的文件以文件夹的形式copy到输出路径
-                    filter: resourcePath => {
-                        return !/\.html$/.test(resourcePath)
-                    }
+            patterns: [{
+                from: resolve('public/static'),
+                to: resolve('dist/static'), // 这是资源copy到输出目录的路径
+                toType: 'dir', // 将from下的文件以文件夹的形式copy到输出路径
+                // 过滤html文件
+                filter: resourcePath => {
+                    return !/\.html$/.test(resourcePath)
                 }
-            ]
+            }]
         }),
         // 此处是production环境的插件
         ...prodPlugins

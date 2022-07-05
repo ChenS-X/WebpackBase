@@ -1,3 +1,5 @@
+@import url(../fonts/iconfont.css); // 导入字体css文件
+
 .container {
     position: relative;
     z-index: 1;
@@ -26,5 +28,25 @@
             // width: 100%;
             // height: 100%;
         }
+    }
+    .avatar2 {
+        margin-top: 20px;
+        width: 200px;
+        height: 200px;
+        background: url('../images/avatar2.jpeg') no-repeat center/100%;
+    }
+    .avatar3 {
+        margin-top: 20px;
+        width: 100px;
+        height: 100px;
+        background: url('../images/avatar3.jpeg') no-repeat center/100%;
+    }
+    .nihao{
+        font-size: 20px;
+        font-weight: 700;
+        color: red;
+        display: flex;
+        align-items: center;
+        margin-top: 10px;
     }
 }

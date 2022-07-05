@@ -536,3 +536,114 @@ npm i -D cross-env
 }
 ```
 此时在运行*npm run build:prod*时，会发现dist生成的文件中多出了css文件，而且该css文件被自动的在*dist/index.html*中引用了。
+
+14. 处理静态资源
+* 静态资源`copy-webpack-plugin`
+> html文件中直接引用静态图片
+运行命令安装`copy-webpack-plugin`
+```
+npm i -D copy-webpack-plugin
+```
+修改`webpack.config.js`配置
+```js
+const CopyWebpackPlugin = require('copy-webpack-plugin'); // 引入插件
+module.exports {
+    plugins: [
+        // 注意，使用copywebpackplugin插件在html文件中引用静态资源是，页面上写src路径是安装打包后的路径写的。
+        // 此时注意下方from和to的文件路径，基于当前项目的接口，我希望在public/index.html中以img:src="./assets/images/xxx.png"的方式
+        // 引用图片文件是有问题的，因为to属性定义了输出路径，所以在public/index.html中写img:src="./static/assets/images/xxx.png"才可以
+        // 正常访问到资源。但是这样在开发时会有一个问题，就是我希望我在index.html中写路径时可以提示，且不用担心是否和输出路径一致。那么我们
+        // 可以在public文件夹下以和输出路径一样的文件结构，比如我现在的输出路径静态资源时static/assets下的，那么我在public文件夹下也依照
+        // static/assets的文件结构存放静态资源，这样就可以开发时写路径有提示，并且不用担心打包后加载不到资源的问题了。
+
+        // 修改下面的Copywebpackplugin配置，同时修改public的文件结构：
+        new CopyWebpackPlugin({
+            patterns: [{
+                from: resolve('public/static'),
+                to: resolve('dist/static'), // 这是资源copy到输出目录的路径
+                toType: 'dir', // 将from下的文件以文件夹的形式copy到输出路径
+                // 过滤html文件
+                filter: resourcePath => {
+                    return !/\.html$/.test(resourcePath)
+                }
+            }]
+        }),
+    ]
+}
+```
+此时在`public`文件加下的静态资源文件就可以在html中引入了。需要注意的是，html引入资源的路径是根据打包生成后的路径来写。
+
+
+
++ 静态资源`url-loader` `file-loader`（webpack5不需要安装，已内置）
+> 在*css*中使用的静态资源，或者使用*import/require*引入的资源
++ *webpack4*运行安装命令
+```
+npm i -D url-loader file-loader
+```
+修改`webpack.config.js`的`module.rules`配置
+```js
+module: {
+    rules: [
+        ...,
+        {
+            // webpack4需要安装url-loader和file-loader
+
+            // 处理图片文件的规则安装指令：cnpm i url-loader file-loader  -D
+            test: /\.(png|jpe?g|gif|gif|svg)(\?.*)?$/,
+            loader: "url-loader",
+            options: {
+                limit: 80 * 1024, // 当图片小于80kb时采用base64的方式打包，大于则以图片形式打包。
+                name: "[hash:10].[ext]", // 每次webpack构建打包会生成一串不重复的hash码，[hash:10]则是去hash的前十位，[ext]取源文件的后缀名。
+                outputPath: "static/img", // 输出目录，output定义了输出目录为build，此处图片输出目录为build/static/img/XXX文件。
+                esModule: false, // 默认使用es6语法解析，html-loader使用的是commonjs语法引入，但2020年09月24日不用关闭url-loader的es6解析方法。
+            },
+        },
+    ]
+}
+```
++ *webpack5*
+修改*webpack.config.js*的*module.rules*配置
+> 可通过在`output`属性的`assetModuleFilename`，也可以在`rule`中直接利用`generator.filename`配置输出路径和文件名称。
+```js
+module: {
+    rules: [
+        ...,
+        {
+            test: /\.(png|jpe?g|gif|gif|svg)(\?.*)?$/,
+            type: 'asset', // 配置type = asset，让wenpack自己选择是输出文件还是转data（base64）
+            parser: {
+                dataUrlCondition: {
+                    // 配置当图片资源小于10kb时转成data:base64，不输出文件
+                    maxSize: 10 * 1024
+                }
+            },
+            generator: {
+                // 单独配置图片文件打包输出的文件路径和文件名称
+                filename: 'static/images/[name].[hash:10][ext]', 
+            }
+        }
+    ]
+}
+```
+解析：资源模块*asset module type*的值：
+```js
+'asset/resource': 导出资源，可配置generator.filename设置打包输出的文件路径和名称
+'asset/inline': 将资源转成base64
+'asset/source': 读取资源内容,用于到处资源的源代码，比如导出一个`txt`格式文本文件
+'asset': 通用数据类型自动转换，可通过parser配置 
+```
+
++ 导入音视频，iconfont等文件`webpack5`，增加`rule`
+```js
+module: {
+    rules: [
+        {
+            test: /\.(mp4|mp3|webm|ogg|wav|flac|acc|woff2?|eot|ttf|otf)(\?.*)?$/,
+            type: 'asset/resource'
+        }
+    ]
+}
+```
+从阿里图标下载代码，解压后将`iconfont.css`和`iconfont.ttf`(`eot`等图标文件)放到`src`文件夹中，放到一个*font*文件夹。
+在`index.css`中，`@import url(../../字体css文件名称.css)`导入。
