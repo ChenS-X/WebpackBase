@@ -388,3 +388,151 @@ module: {
 }
 ```
 这个时候吗，项目就已经具备支持TS开发的能力了。可以在项目中新建ts文件予以检测。
+
+13. 分离css
+> 现在运行`npm run build:prod`时，js和css都是杂糅在bundle.js中的。可以安装`mini-css-extract-plugin`插件，将css从bundle.js中独立出来。
+```
+npm i -D mini-css-extract-plugin
+```
+我们希望当*development*环境时不分离css，这样编译速度加快，但是当打包上线时（*production*）时分离css。这个时候就需要对不同的开发环境做配置了。
+```js
+// webpack.config.js
+const path = require('path'); // 引入path
+const resolve = _path => path.resolve(__dirname, _path); // 声明resolve函数，方便调用拼接路径
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const {
+    CleanWebpackPlugin
+} = require('clean-webpack-plugin'); // 打包时删除上一次打包生成的dist文件
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+
+const isProd = process.env.NODE_ENV === 'production'; // 判断环境，需要借助cross-env，且修改package.json的执行命令，指定开发环境。
+console.log('isProd:', isProd);
+const prodPlugins = []; // 此变量用于存放开发环境production下需要的插件
+if (isProd) {
+    prodPlugins.push(new MiniCssExtractPlugin({
+        filename: '[name].[hash].css', // 规定分离css后打包的文件名称
+    }))
+}
+
+const TerserPlugin = require('terser-webpack-plugin'); //  webpack5内置Terser压缩，不需要单独安装
+
+module.exports = {
+    entry: './src/index.js', // 指定入口文件
+    output: {
+        path: resolve('dist'), // 将文件打包到/dist文件路径下
+        filename: 'bundle.[hash].js' // 打包成功后的js文件名称为 bundle.js
+    },
+    // 配置压缩
+    optimization: {
+        minimize: true, // 是否压缩
+        minimizer: [
+            new TerserPlugin({ // webpack5内置Terser压缩
+                extractComments: false, // 不将注释提取到单独的txt文件
+            })
+        ]
+    },
+    devServer: {
+        hot: true,
+    },
+    resolve: {
+        // 配置省略文件路径后缀名
+        extensions: ['.js', '.ts']
+    },
+    module: {
+        rules: [{
+                test: /\.(sa|sc|c)ss$/,
+                use: [
+                    // 判断，如果是开发环境，则使用style-loader， 如果是发布的话，就分离css
+                    isProd ? {
+                        loader: MiniCssExtractPlugin.loader,
+                        options: {
+                            publicPath: './'
+                        }
+                    } : 'style-loader',
+                    'css-loader',
+                    {
+                        loader: 'postcss-loader',
+                        options: {
+                            postcssOptions: {
+                                plugins: [
+                                    'postcss-preset-env'
+                                ],
+                            },
+                        },
+                    },
+                    'sass-loader'
+                ]
+            },
+            {
+                test: /\.m?js$/,
+                exclude: /node_modules/,
+                use: {
+                    loader: 'babel-loader',
+                    options: {
+                        presets: [
+                            [
+                                '@babel/preset-env',
+                                {
+                                    useBuiltIns: 'usage', // corejs按需加载
+                                    corejs: 3, // 配置corejs的版本
+                                    // 适配的浏览器版本 >= 
+                                    // targets: {
+                                    //     chrome: '50',
+                                    //     firefox: '50',
+                                    //     ie: '6',
+                                    //     edge: '18',
+                                    //     safari: '10'
+                                    // },
+                                    // 使用browsers
+                                    targets: {
+                                        browsers: ["> 1%", "last 2 versions", "not ie <= 6"]
+                                    }
+                                }
+                            ]
+                        ]
+                    }
+                }
+            },
+            {
+                test: /\.tsx?$/,
+                use: 'ts-loader',
+                exclude: /node_modules/
+            }
+        ]
+    },
+    plugins: [
+        new HtmlWebpackPlugin({
+            template: './public/index.html'
+        }),
+        new CleanWebpackPlugin(),
+        // 此处是production环境的插件
+        ...prodPlugins
+    ]
+}
+```
+此时，上方的`webpack.config.js`中的*process.env.NODE_ENV*是`undefined`，需要修改*package.json*的指令，在执行环境中加入`NODE_ENV`变量。这里需要安装`cross-env`来处理跨平台兼容。
+```
+npm i -D cross-env
+```
+然后修改`package.json`的`scripts`执行命令
+```js
+// 原有的package.json的scripts命令
+{
+    "scripts": {
+        "dev": "webpack server --port 3001 --open --mode development",
+        "build:dev": "webpack --mode development",
+        "build:prod": "webpack --mode production"
+    }
+}
+```
+```js
+// 加入cross-env，指定执行环境之后的scripts命令
+{
+    "scripts": {
+        "dev": "cross-evn NODE_ENV=development webpack server --open --port 3002",
+        "build:dev": "cross-env NODE_ENV=development webpack",
+        "build:prod": "cross-env NODE_ENV=production webpack"
+    }
+}
+```
+此时在运行*npm run build:prod*时，会发现dist生成的文件中多出了css文件，而且该css文件被自动的在*dist/index.html*中引用了。
