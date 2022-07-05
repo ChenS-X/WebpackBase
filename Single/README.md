@@ -288,3 +288,72 @@ module: {
     ]
 }
 ```
+
+11. babel实现编译ES6+
+> 运行命令，安装`@babel/core`，`@babel/preset-env`，`babel-loader`:
+```
+npm i -D @babel/core @babel/preset-env babel-loader
+```
+> 修改`webpack.config.js`中`module.rules`添加一条对js文件的规则:
+```js
+module: {
+    rules: [
+        ...,
+        {
+            test: /\.m?js$/,
+            exclude: /node_modules/, // 排除node_modules中的文件
+            use: {
+                loader: 'babel-loader',
+                options: {
+                    presets: [
+                        [
+                            '@babel/preset-env'
+                        ]
+                    ]
+                }
+            }
+        }
+    ]
+}
+```
+> 此配置之后，仅仅可以将诸如`const`，`let`，箭头函数等编译成ES5，但是对于`Promise`等，还需要`core-js`库来导入。可以将`core-js`理解为一个包含了许多ES6+实现的兼容库，解决`polyfill`问题。运行命令安装`core-js`：
+```
+npm i -D core-js
+```
+然后修改`webpack.config.js`中`bable`的配置。
+```js
+module: {
+    ...,
+    {
+        test: /\.m?js$/,
+        exclude: /(node_modules)|(bower-components)/,
+        use: {
+            loader: 'babel-loader',
+            options: {
+                presets: [
+                    [
+                        'babel-loader',
+                        {
+                            usesBuiltIns: 'usage', // corejs按需加载
+                            corejs: 3, // 配置corejs的版本
+                                // 适配的浏览器版本 >= 
+                            // targets: {
+                            //     chrome: '50',
+                            //     firefox: '50',
+                            //     ie: '6',
+                            //     edge: '18',
+                            //     safari: '10'
+                            // },
+                            // 使用browsers
+                            targets: {
+                                browsers: ["> 1%", "last 2 versions", "not ie <= 6"]
+                            }
+                        }
+                    ]
+                ]
+            }
+        }
+    }
+}
+```
+此时，在`index.js`中加入一句`console.log(Promise)`，然后运行打包命令，此时会发现生成的`build.js`中多出了`Promise`的`polyfill`兼容版本。

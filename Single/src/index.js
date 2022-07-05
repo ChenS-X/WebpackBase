@@ -8,3 +8,8 @@
 import './style/css/base.css';
 import './style/css/index.scss';
 
+const a = 10;
+const b = async function() {
+    console.log(a);
+}
+b();
