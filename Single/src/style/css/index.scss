@@ -1,7 +1,30 @@
 .container {
     position: relative;
     z-index: 1;
+    box-sizing: border-box;
+    padding: 10px;
     h1{
         color: red;
+    }
+    .avatar{
+        width: 100px;
+        height: 100px;
+        overflow: hidden;
+        border-radius: 50%;
+        border: 2px solid purple;
+        // padding: 2px;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        img {
+            width: 96%;
+            height: 96%;
+            // width: 90px;
+            // height: 90px;
+            border-radius: 50%;
+            // width: 100%;
+            // height: 100%;
+        }
     }
 }

@@ -6,8 +6,11 @@ const {
 } = require('clean-webpack-plugin'); // 打包时删除上一次打包生成的dist文件
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
+// 处理在htnml中引入静态资源
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+
 const isProd = process.env.NODE_ENV === 'production'; // 判断环境，需要借助cross-env，且修改package.json的执行命令，指定开发环境。
-console.log('isProd:', isProd);
+// console.log('isProd:', isProd);
 const prodPlugins = []; // 此变量用于存放开发环境production下需要的插件
 if (isProd) {
     prodPlugins.push(new MiniCssExtractPlugin({
@@ -102,6 +105,24 @@ module.exports = {
             template: './public/index.html'
         }),
         new CleanWebpackPlugin(),
+        // 注意，使用copywebpackplugin插件在html文件中引用静态资源是，页面上写src路径是安装打包后的路径写的。
+        // 此时注意下方from和to的文件路径，基于当前项目的接口，我希望在public/index.html中以img:src="./assets/images/xxx.png"的方式
+        // 引用图片文件是有问题的，因为to属性定义了输出路径，所以在public/index.html中写img:src="./static/assets/images/xxx.png"才可以
+        // 正常访问到资源。但是这样在开发时会有一个问题，就是我希望我在index.html中写路径时可以提示，且不用担心是否和输出路径一致。那么我们
+        // 可以在public文件夹下以和输出路径一样的文件结构，比如我现在的输出路径静态资源时static/assets下的，那么我在public文件夹下也依照
+        // static/assets的文件结构存放静态资源，这样就可以开发时写路径有提示，并且不用担心打包后加载不到资源的问题了。
+        new CopyWebpackPlugin({
+            patterns: [
+                {
+                    from: resolve('public'),
+                    to: resolve('dist/static'), // 这是资源copy到输出目录的路径
+                    toType: 'dir', // 将from下的文件以文件夹的形式copy到输出路径
+                    filter: resourcePath => {
+                        return !/\.html$/.test(resourcePath)
+                    }
+                }
+            ]
+        }),
         // 此处是production环境的插件
         ...prodPlugins
     ]
