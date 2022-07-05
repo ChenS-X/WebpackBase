@@ -23,6 +23,10 @@ module.exports = {
     devServer: {
         hot: true,
     },
+    resolve: {
+        // 配置省略文件路径后缀名
+        extensions: ['.js', '.ts']
+    },
     module: {
         rules: [
             {
@@ -72,6 +76,11 @@ module.exports = {
                         ]
                     }
                 }
+            },
+            {
+                test: /\.tsx?$/,
+                use: 'ts-loader',
+                exclude: /node_modules/
             }
         ]
     },

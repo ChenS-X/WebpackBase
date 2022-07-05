@@ -357,3 +357,34 @@ module: {
 }
 ```
 此时，在`index.js`中加入一句`console.log(Promise)`，然后运行打包命令，此时会发现生成的`build.js`中多出了`Promise`的`polyfill`兼容版本。
+
+12. 支持TypeScript
+> 安装`ts-loader`,`typescript`
+```js
+npm i -D ts-loader typescript
+```
+修改`webpack.config.js`的`module.rules`配置，增加一项是对`ts`的配置，如下：
+```js
+module: {
+    rules: [
+        ...,
+        {
+            test: /\.tsx?$/,
+            use: 'ts-loader'
+        }
+    ]
+}
+```
+接着在`webpack.config.js`同级目录下，新建一个`tsconfig.json`的文件，配置ts编译的相关规则：
+```js
+// 注意，真实的json文件不能加注释，此处只是作为演示使用
+{
+    "compilerOptions": {
+        "module": "ES6", // 编译前的
+        "target": "ES3", // 编译后的
+        "strict": true, // 是否采取严格模式
+        "noEmitOnError": true // 出错后是否还正常输出
+    }
+}
+```
+这个时候吗，项目就已经具备支持TS开发的能力了。可以在项目中新建ts文件予以检测。

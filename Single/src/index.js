@@ -8,8 +8,15 @@
 import './style/css/base.css';
 import './style/css/index.scss';
 
-const a = 10;
-const b = async function() {
-    console.log(a);
+import { testFunc } from './lib/test';
+
+function randomStr() {
+    return Math.random() + '';
 }
-b();
+
+console.log(testFunc(randomStr()));
+// const a = 10;
+// const b = async function() {
+//     console.log(a);
+// }
+// b();
