@@ -6,6 +6,9 @@ const {
 } = require('clean-webpack-plugin'); // 打包时删除上一次打包生成的dist文件
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
+// 导入vue插件
+const { VueLoaderPlugin } = require('vue-loader');
+
 // 处理在htnml中引入静态资源
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
@@ -13,7 +16,11 @@ const isProd = process.env.NODE_ENV === 'production'; // 判断环境，需要�
 
 // 判断平台
 const platform = process.env.PLATFORM;
-// console.log('platform:', platform);
+const isVue = platform === 'VUE';
+const vuePlugins = [];
+if(isVue) {
+    vuePlugins.push(new VueLoaderPlugin())
+}
 
 // console.log('isProd:', isProd);
 const prodPlugins = []; // 此变量用于存放开发环境production下需要的插件
@@ -27,7 +34,7 @@ if (isProd) {
 const TerserPlugin = require('terser-webpack-plugin'); //  webpack5内置Terser压缩，不需要单独安装
 
 module.exports = {
-    entry: './src/index.js', // 指定入口文件
+    entry: isVue ? './src/vue/main.js' : './src/index.js', // 指定入口文件
     output: {
         path: resolve('dist'), // 将文件打包到/dist文件路径下
         filename: 'bundle.[hash].js', // 打包成功后的js文件名称为 bundle.js
@@ -48,7 +55,10 @@ module.exports = {
     },
     resolve: {
         // 配置省略文件路径后缀名
-        extensions: ['.js', '.ts']
+        extensions: ['.js', '.ts', '.vue'],
+        alias: {
+            '@': resolve('src')
+        }
     },
     module: {
         rules: [{
@@ -105,6 +115,10 @@ module.exports = {
                 use: 'ts-loader',
                 exclude: /node_modules/
             },
+            {
+                test: /\.vue$/,
+                use: 'vue-loader'
+            },
             // {
             //     // webpack4需要安装url-loader和file-loader
 
@@ -146,7 +160,7 @@ module.exports = {
     },
     plugins: [
         new HtmlWebpackPlugin({
-            template: './public/index.html'
+            template: isVue ? './public/vue.html' : './public/index.html'
         }),
         new CleanWebpackPlugin(),
         // 注意，使用copywebpackplugin插件在html文件中引用静态资源是，页面上写src路径是安装打包后的路径写的。
@@ -168,6 +182,8 @@ module.exports = {
                 }
             }]
         }),
+        // 此处是vue插件
+        ...vuePlugins,
         // 此处是production环境的插件
         ...prodPlugins
     ]
