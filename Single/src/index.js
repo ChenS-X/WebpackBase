@@ -15,8 +15,3 @@ function randomStr() {
 }
 
 console.log(testFunc(randomStr()));
-// const a = 10;
-// const b = async function() {
-//     console.log(a);
-// }
-// b();

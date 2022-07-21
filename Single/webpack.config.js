@@ -10,6 +10,11 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 const isProd = process.env.NODE_ENV === 'production'; // 判断环境，需要借助cross-env，且修改package.json的执行命令，指定开发环境。
+
+// 判断平台
+const platform = process.env.PLATFORM;
+// console.log('platform:', platform);
+
 // console.log('isProd:', isProd);
 const prodPlugins = []; // 此变量用于存放开发环境production下需要的插件
 if (isProd) {

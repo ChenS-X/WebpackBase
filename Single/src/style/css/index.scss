@@ -49,4 +49,81 @@
         align-items: center;
         margin-top: 10px;
     }
+    .ring{
+        // animation: ring-bound 2s infinite linear;
+        position: relative;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: transparent;
+        cursor: pointer;
+        .ring1 {
+            animation: ring-bound 2s infinite ease;
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            left: 10px;
+            top: 10px;
+            // background: yellow;
+            border: 1px solid red;
+            box-shadow: 0 0 5px #ff0000;
+            background-image: radial-gradient(circle at center, transparent, rgba(255, 0, 0, 0.5));
+            border-radius: 50%;
+            box-sizing: border-box;
+        }
+        .ring2 {
+            animation: ring-bound1 2s infinite ease;
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            left: 7px;
+            top: 7px;
+            // background: yellow;
+            border: 1px solid red;
+            box-shadow: 0 0 5px red;
+            background-image: radial-gradient(circle at center, transparent, rgba(255, 0, 0, 0.5));
+            border-radius: 50%;
+            box-sizing: border-box;
+        }
+        .centerpoint {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            border-radius: 50%;
+            // background: red;
+            background-image: radial-gradient(circle at center, red, rgba(255, 0, 0, 0.8));
+            left: 9px;
+            top: 9px;
+        }
+    }
+}
+
+@keyframes ring-bound {
+    from{
+        left: 5px;
+        top: 5px;
+        width: 10px;
+        height: 10px;
+    }
+    to {
+        left: 0px;
+        top: 0px;
+        width: 20px;
+        height: 20px;
+    }
+}
+
+@keyframes ring-bound1 {
+    from{
+        left: 7px;
+        top: 7px;
+        width: 6px;
+        height: 6px;
+    }
+    to {
+        left: 4px;
+        top: 4px;
+        width: 12px;
+        height: 12px;
+    }
 }
