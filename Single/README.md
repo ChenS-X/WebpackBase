@@ -647,3 +647,116 @@ module: {
 ```
 从阿里图标下载代码，解压后将`iconfont.css`和`iconfont.ttf`(`eot`等图标文件)放到`src`文件夹中，放到一个*font*文件夹。
 在`index.css`中，`@import url(../../字体css文件名称.css)`导入。
+
+
+15. 引入Vue3开发
+> 安装 `vue@next`和`vue-loader@next`以及`@vue/compiler-sfc`，使得项目支持`vue`和`.vue`文件。
+```js
+npm i -D vue@next
+
+npm i -D vue-loader@next @vue/compiler-sfc // 让webpack支持单文件组件（sfc）
+```
+修改`webpack.config.js`配置`VueLoaderPlugin`和`vue-loader`。
+```js
+const { VueLoaderPlugin } = require('vue-loader');
+
+module.exports = {
+    ...,
+    plugins: [
+        new VueLoaderPlugin()
+    ],
+    module: {
+        rules: [{
+            test: /\.vue$/,
+            use: 'vue-loader'
+        }]
+    }
+}
+```
+由于当前项目为`webpack`综合项目，主要用于展示`webpack`使用，以后可能还会集成`React`等其他的前端框架，所以此处我们可以使用启动命令区分不同的前端框架开发。修改`package.json`的`scripts`，如下：
+```js
+// package.json
+...,
+"scripts": {
+    "dev": "cross-env NODE_ENV=development webpack server --open --port 3002",
+    "dev:vue": "cross-env NODE_ENV=development PLATFORM=VUE webpack server --open --port 3001",
+    "build:dev": "cross-env NODE_ENV=development webpack",
+    "build:prod": "cross-env NODE_ENV=production webpack"
+}
+```
+然后修改`webpack.config.js`中对于`vue`的配置
+```js
+// webpack.config.js
+const { VueLoaderPlugin } = require('vue-loader'); // 导入VueLoaderPlugin插件
+const isVue = process.env.PLATFORM === 'VUE'; // 判断是否为vue平台
+const vuePlugins = [];
+if(isVue) {
+    vuePlugins.push(new VueLoaderPlugin())
+}
+
+module.exports = {
+    // 修改模板html
+    entry: isVue ? './src/vue/main.js' : './src/index.js';
+    ...,
+    // 配置vue插件
+    plugins: [
+        new HtmlWebpackPlugin({
+            template: isVue ? './public/vue.html' : './public/index.html'
+        }),
+        ...vuePlugins,
+    ]
+}
+```
+在`public`文件夹中新建一个`vue.html`，如下：
+```html
+<!-- vue模板html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Vue</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+    <div id="app"></div>
+</body>
+
+</html>
+```
+在`src`下新建一个文件夹`vue`，以后`vue`相关开发文件都存放到这个路径下。在此`vue`文件夹下新建`main.js`和`App.vue`，分别如下：
+```vue
+<!-- vue/App.vue -->
+<template>
+  <div class="main">
+    <h1>{{ title }}</h1>
+  </div>
+</template>
+
+<script>
+import { reactive, toRefs } from 'vue';
+export default {
+  setup() {
+    const state = reactive({
+        title: 'nihao1111'
+    })
+
+    return {
+        ...toRefs(state)
+    }
+  }
+};
+</script>
+
+<style>
+</style>
+```
+```js
+// vue/main.js
+import { createApp } from 'vue';
+import App from '@/vue/App';
+
+createApp(App).mount('#app');
+```
+此时，执行命令`npm run dev:vue`，等待刷新出来的浏览器结果。
